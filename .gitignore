@@ -2,14 +2,24 @@ __pycache__/
 *.pyc
 .env
 venv/
+.atl/
 output/
 aria-gui/
 Full Plan/
 presentation/
 articles/
+pdfs/
 *.html
 *.pptx
 *.docx
+firman.log
+search_query_log.csv
+test_output.log
+nul
+corpus.json
+excluded.json
+list_models.py
+test_*.py
 STATUS.md
 PROGRESS_SUMMARY.md
 FINAL_SUMMARY.md
@@ -19,3 +29,6 @@ ARIA_Guide_Part*.md
 ARIA_Proposal_v5_Brown.md
 commit-summary.txt
 DESIGN.md
+briefing.md
+paper*.md
+task-*.md
