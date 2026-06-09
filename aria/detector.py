@@ -1,13 +1,14 @@
 import os
+import json
 from typing import List, Dict, Any
 import pandas as pd
 from .state import ARIAState
-from .llm_client import call_llm_json
+from .llm_client import call_llm_json_array
 from .prompts import (
-    GRADE_INFLATION_PROMPT,
-    CLO_INCONSISTENCY_PROMPT,
-    SUBMISSION_CLUSTERING_PROMPT,
-    CO_COMPLETION_PROMPT,
+    GRADE_INFLATION_BATCH_PROMPT,
+    CLO_INCONSISTENCY_BATCH_PROMPT,
+    SUBMISSION_CLUSTERING_BATCH_PROMPT,
+    CO_COMPLETION_BATCH_PROMPT,
 )
 
 
@@ -26,11 +27,31 @@ def _mock_flag(fraud_type: str, record_id: str, reason: str, evidence: dict) -> 
     }
 
 
+def _batch_llm(
+    prompt_template: str,
+    records: List[dict],
+    chunk_size: int = 30,
+) -> List[dict]:
+    if not records:
+        return []
+    all_flags = []
+    for i in range(0, len(records), chunk_size):
+        chunk = records[i : i + chunk_size]
+        prompt = prompt_template.format(records=json.dumps(chunk, indent=2))
+        result = call_llm_json_array(prompt)
+        if not result:
+            continue
+        for item in result:
+            item.setdefault("flagged", True)
+        all_flags.extend(item for item in result if item.get("flagged"))
+    return all_flags
+
+
 def check_grade_inflation(grades: List[Dict]) -> List[Dict]:
-    flags = []
-    for record in grades:
-        z = record.get("z_score", 0)
-        if _is_mock():
+    if _is_mock():
+        flags = []
+        for record in grades:
+            z = record.get("z_score", 0)
             if z > 1.5:
                 flags.append(
                     _mock_flag(
@@ -44,34 +65,32 @@ def check_grade_inflation(grades: List[Dict]) -> List[Dict]:
                         },
                     )
                 )
-            continue
+        return flags
 
-        prompt = GRADE_INFLATION_PROMPT.format(
-            course_id=record["course_id"],
-            section_id=record["section_id"],
-            instructor_id=record["instructor_id"],
-            semester=record["semester"],
-            avg_grade=record["avg_grade"],
-            historical_mean=record["historical_mean"],
-            historical_std=record["historical_std"],
-            z_score=z,
-        )
-        result = call_llm_json(prompt)
-        if result is None:
-            print(
-                f"[WARN] JSON parse failed for {record['course_id']}_{record['section_id']}"
+    batch = []
+    for record in grades:
+        z = record.get("z_score", 0)
+        if z > 1.5:
+            batch.append(
+                {
+                    "course_id": record["course_id"],
+                    "section_id": record["section_id"],
+                    "instructor_id": record["instructor_id"],
+                    "semester": record["semester"],
+                    "avg_grade": record["avg_grade"],
+                    "historical_mean": record["historical_mean"],
+                    "historical_std": record["historical_std"],
+                    "z_score": z,
+                }
             )
-            continue
-        if result.get("flagged"):
-            flags.append(result)
-    return flags
+    return _batch_llm(GRADE_INFLATION_BATCH_PROMPT, batch)
 
 
 def check_clo_inconsistency(students: List[Dict]) -> List[Dict]:
-    flags = []
-    for record in students:
-        gap = record.get("co_exam_gap", 0)
-        if _is_mock():
+    if _is_mock():
+        flags = []
+        for record in students:
+            gap = record.get("co_exam_gap", 0)
             if gap > 20:
                 flags.append(
                     _mock_flag(
@@ -85,57 +104,51 @@ def check_clo_inconsistency(students: List[Dict]) -> List[Dict]:
                         },
                     )
                 )
-            continue
+        return flags
 
-        prompt = CLO_INCONSISTENCY_PROMPT.format(
-            student_id=record["student_id"],
-            course_id=record["course_id"],
-            semester=record["semester"],
-            exam_score=record["exam_score"],
-            co_score=record["co_score"],
-            co_exam_gap=gap,
-        )
-        result = call_llm_json(prompt)
-        if result is None:
-            print(
-                f"[WARN] JSON parse failed for {record['student_id']}_{record['course_id']}"
+    batch = []
+    for record in students:
+        gap = record.get("co_exam_gap", 0)
+        if gap > 20:
+            batch.append(
+                {
+                    "student_id": record["student_id"],
+                    "course_id": record["course_id"],
+                    "semester": record["semester"],
+                    "exam_score": record["exam_score"],
+                    "co_score": record["co_score"],
+                    "co_exam_gap": gap,
+                }
             )
-            continue
-        if result.get("flagged"):
-            flags.append(result)
-    return flags
+    return _batch_llm(CLO_INCONSISTENCY_BATCH_PROMPT, batch)
 
 
 def check_submission_clustering(submissions: List[Dict]) -> List[Dict]:
-    flags = []
-    submissions_by_assignment = {}
-    for sub in submissions:
-        assignment_id = sub["assignment_id"]
-        if assignment_id not in submissions_by_assignment:
-            submissions_by_assignment[assignment_id] = []
-        submissions_by_assignment[assignment_id].append(sub)
+    if _is_mock():
+        flags = []
+        submissions_by_assignment = {}
+        for sub in submissions:
+            assignment_id = sub["assignment_id"]
+            if assignment_id not in submissions_by_assignment:
+                submissions_by_assignment[assignment_id] = []
+            submissions_by_assignment[assignment_id].append(sub)
 
-    for assignment_id, assignment_subs in submissions_by_assignment.items():
-        sorted_subs = sorted(assignment_subs, key=lambda x: x["timestamp"])
-
-        for i in range(len(sorted_subs)):
-            for j in range(i + 1, len(sorted_subs)):
-                sub1 = sorted_subs[i]
-                sub2 = sorted_subs[j]
-
-                try:
-                    time1 = pd.to_datetime(sub1["timestamp"])
-                    time2 = pd.to_datetime(sub2["timestamp"])
-                    time_diff_seconds = abs((time2 - time1).total_seconds())
-                except:
-                    continue
-
-                if time_diff_seconds <= 120:
-                    sim1 = float(sub1.get("similarity_score", 0))
-                    sim2 = float(sub2.get("similarity_score", 0))
-                    avg_similarity = (sim1 + sim2) / 2.0
-
-                    if _is_mock():
+        for assignment_id, assignment_subs in submissions_by_assignment.items():
+            sorted_subs = sorted(assignment_subs, key=lambda x: x["timestamp"])
+            for i in range(len(sorted_subs)):
+                for j in range(i + 1, len(sorted_subs)):
+                    sub1 = sorted_subs[i]
+                    sub2 = sorted_subs[j]
+                    try:
+                        time1 = pd.to_datetime(sub1["timestamp"])
+                        time2 = pd.to_datetime(sub2["timestamp"])
+                        time_diff_seconds = abs((time2 - time1).total_seconds())
+                    except:
+                        continue
+                    if time_diff_seconds <= 120:
+                        sim1 = float(sub1.get("similarity_score", 0))
+                        sim2 = float(sub2.get("similarity_score", 0))
+                        avg_similarity = (sim1 + sim2) / 2.0
                         if avg_similarity > 0.75:
                             flags.append(
                                 _mock_flag(
@@ -148,50 +161,65 @@ def check_submission_clustering(submissions: List[Dict]) -> List[Dict]:
                                     },
                                 )
                             )
-                        continue
+        return flags
 
-                    prompt = SUBMISSION_CLUSTERING_PROMPT.format(
-                        assignment_id=assignment_id,
-                        student_id_1=sub1["student_id"],
-                        student_id_2=sub2["student_id"],
-                        timestamp_1=sub1["timestamp"],
-                        timestamp_2=sub2["timestamp"],
-                        time_diff_seconds=int(time_diff_seconds),
-                        similarity_score=avg_similarity,
-                    )
-                    result = call_llm_json(prompt)
-                    if result is None:
-                        print(
-                            f"[WARN] JSON parse failed for submission pair {sub1['student_id']}-{sub2['student_id']}"
+    batch = []
+    submissions_by_assignment = {}
+    for sub in submissions:
+        assignment_id = sub["assignment_id"]
+        if assignment_id not in submissions_by_assignment:
+            submissions_by_assignment[assignment_id] = []
+        submissions_by_assignment[assignment_id].append(sub)
+
+    for assignment_id, assignment_subs in submissions_by_assignment.items():
+        sorted_subs = sorted(assignment_subs, key=lambda x: x["timestamp"])
+        for i in range(len(sorted_subs)):
+            for j in range(i + 1, len(sorted_subs)):
+                sub1 = sorted_subs[i]
+                sub2 = sorted_subs[j]
+                try:
+                    time1 = pd.to_datetime(sub1["timestamp"])
+                    time2 = pd.to_datetime(sub2["timestamp"])
+                    time_diff_seconds = abs((time2 - time1).total_seconds())
+                except:
+                    continue
+                if time_diff_seconds <= 120:
+                    sim1 = float(sub1.get("similarity_score", 0))
+                    sim2 = float(sub2.get("similarity_score", 0))
+                    avg_similarity = (sim1 + sim2) / 2.0
+                    if avg_similarity > 0.75:
+                        batch.append(
+                            {
+                                "assignment_id": assignment_id,
+                                "student_id_1": sub1["student_id"],
+                                "student_id_2": sub2["student_id"],
+                                "timestamp_1": str(sub1["timestamp"]),
+                                "timestamp_2": str(sub2["timestamp"]),
+                                "time_diff_seconds": int(time_diff_seconds),
+                                "similarity_score": avg_similarity,
+                            }
                         )
-                        continue
-                    if result.get("flagged"):
-                        flags.append(result)
-
-    return flags
+    return _batch_llm(SUBMISSION_CLUSTERING_BATCH_PROMPT, batch)
 
 
 def check_co_completion_rate(students: List[Dict]) -> List[Dict]:
-    flags = []
-    course_semester_groups = {}
-    for student in students:
-        key = (student["course_id"], student["semester"])
-        if key not in course_semester_groups:
-            course_semester_groups[key] = []
-        course_semester_groups[key].append(student)
+    if _is_mock():
+        flags = []
+        course_semester_groups = {}
+        for student in students:
+            key = (student["course_id"], student["semester"])
+            if key not in course_semester_groups:
+                course_semester_groups[key] = []
+            course_semester_groups[key].append(student)
 
-    for (course_id, semester), group_students in course_semester_groups.items():
-        student_count = len(group_students)
-
-        if student_count < 8:
-            continue
-
-        all_perfect = all(
-            student.get("co_attainment_rate", 0) == 1.0 for student in group_students
-        )
-
-        if all_perfect:
-            if _is_mock():
+        for (course_id, semester), group_students in course_semester_groups.items():
+            student_count = len(group_students)
+            if student_count < 8:
+                continue
+            if all(
+                student.get("co_attainment_rate", 0) == 1.0
+                for student in group_students
+            ):
                 flags.append(
                     _mock_flag(
                         "CO Completion Rate",
@@ -203,25 +231,32 @@ def check_co_completion_rate(students: List[Dict]) -> List[Dict]:
                         },
                     )
                 )
-                continue
+        return flags
 
-            rep_student = group_students[0]
-            prompt = CO_COMPLETION_PROMPT.format(
-                course_id=course_id,
-                semester=semester,
-                student_count=student_count,
-                co_attainment_rate=1.0,
+    batch = []
+    course_semester_groups = {}
+    for student in students:
+        key = (student["course_id"], student["semester"])
+        if key not in course_semester_groups:
+            course_semester_groups[key] = []
+        course_semester_groups[key].append(student)
+
+    for (course_id, semester), group_students in course_semester_groups.items():
+        student_count = len(group_students)
+        if student_count < 8:
+            continue
+        if all(
+            student.get("co_attainment_rate", 0) == 1.0 for student in group_students
+        ):
+            batch.append(
+                {
+                    "course_id": course_id,
+                    "semester": semester,
+                    "student_count": student_count,
+                    "co_attainment_rate": 1.0,
+                }
             )
-            result = call_llm_json(prompt)
-            if result is None:
-                print(
-                    f"[WARN] JSON parse failed for course {course_id} semester {semester}"
-                )
-                continue
-            if result.get("flagged"):
-                flags.append(result)
-
-    return flags
+    return _batch_llm(CO_COMPLETION_BATCH_PROMPT, batch)
 
 
 def detector_node(state: ARIAState) -> dict:
