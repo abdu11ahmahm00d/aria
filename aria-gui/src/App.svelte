@@ -1,7 +1,6 @@
 <script lang="ts">
   import { currentView, flags, isRunning, runProgress, report, error } from './lib/stores'
   import { gradesFile, studentsFile, submissionsFile, allFilesReady, loadFile } from './lib/uploads'
-  import { extractStudentIds, extractCourseCodes } from './lib/csv'
   import Sidebar from './lib/components/Sidebar.svelte'
   import UploadRow from './lib/components/UploadRow.svelte'
   import Dashboard from './pages/Dashboard.svelte'
@@ -94,48 +93,131 @@
     setTimeout(async () => {
       const g = $gradesFile
       const s = $studentsFile
+      const sub = $submissionsFile
 
-      const studentIds = g ? extractStudentIds(g.meta.data) : s ? extractStudentIds(s.meta.data) : []
-      const courseCodes = g ? extractCourseCodes(g.meta.data) : []
+      const gradesRows = g?.meta.data ?? []
+      const studentsRows = s?.meta.data ?? []
+      const subsRows = sub?.meta.data ?? []
 
-      if (studentIds.length === 0) studentIds.push('STU001', 'STU002', 'STU005', 'STU012', 'STU003', 'STU004', 'STU006')
+      const mockFlags: Flag[] = []
 
-      const allStudents = studentIds.length >= 6 ? studentIds : ['STU001', 'STU002', 'STU003', 'STU004', 'STU005', 'STU006']
-      const allCourses = courseCodes.length >= 3 ? courseCodes : ['CS101', 'CS102', 'MATH201', 'CS201']
+      // 1 — Grade Inflation
+      runProgress.set('Checking grade inflation...')
+      await delay(200)
+      for (const row of gradesRows) {
+        const avg = parseFloat(row.avg_grade)
+        const mean = parseFloat(row.historical_mean)
+        const std = parseFloat(row.historical_std) || 1
+        const z = (avg - mean) / std
+        if (z > 1.5) {
+          mockFlags.push({
+            flagged: true,
+            fraud_type: 'Grade Inflation',
+            record_id: `${row.course_id}_${row.section_id}`,
+            confidence: Math.min(0.7 + (z - 1.5) * 0.15, 0.99),
+            reason: `z-score ${z.toFixed(2)} exceeds threshold of 1.5`,
+            evidence: { z_score: Math.round(z * 1000) / 1000, avg_grade: avg, historical_mean: mean },
+          })
+        }
+      }
 
-      const mockFlags: Flag[] = [
-        { flagged: true, fraud_type: 'Grade Inflation', record_id: `${allCourses[0]}_1`, confidence: 0.95, reason: 'z-score 2.32 exceeds threshold of 1.5', evidence: { z_score: 2.321, avg_grade: 88.4, historical_mean: 76.1 } },
-        { flagged: true, fraud_type: 'Grade Inflation', record_id: `${allCourses[1]}_1`, confidence: 0.95, reason: 'z-score 1.73 exceeds threshold of 1.5', evidence: { z_score: 1.726, avg_grade: 91.2, historical_mean: 80.5 } },
-        { flagged: true, fraud_type: 'Grade Inflation', record_id: `${allCourses[2]}_1`, confidence: 0.95, reason: 'z-score 1.52 exceeds threshold of 1.5', evidence: { z_score: 1.521, avg_grade: 85.6, historical_mean: 78.3 } },
-        { flagged: true, fraud_type: 'CLO Inconsistency', record_id: `${allStudents[0]}_${allCourses[0]}`, confidence: 0.95, reason: 'CLO score 33pts above exam exceeds 20pt threshold', evidence: { exam_score: 58, co_score: 91, co_exam_gap: 33 } },
-        { flagged: true, fraud_type: 'CLO Inconsistency', record_id: `${allStudents[1]}_${allCourses[0]}`, confidence: 0.95, reason: 'CLO score 27pts above exam exceeds 20pt threshold', evidence: { exam_score: 61, co_score: 88, co_exam_gap: 27 } },
-        { flagged: true, fraud_type: 'CLO Inconsistency', record_id: `${allStudents[2]}_${allCourses[1]}`, confidence: 0.95, reason: 'CLO score 25pts above exam exceeds 20pt threshold', evidence: { exam_score: 45, co_score: 70, co_exam_gap: 25 } },
-        { flagged: true, fraud_type: 'CLO Inconsistency', record_id: `${allStudents[3]}_${allCourses[3]}`, confidence: 0.95, reason: 'CLO score 35pts above exam exceeds 20pt threshold', evidence: { exam_score: 55, co_score: 90, co_exam_gap: 35 } },
-        { flagged: true, fraud_type: 'Submission Clustering', record_id: `ASSIGN001_${allStudents[0]}_${allStudents[1]}`, confidence: 0.95, reason: 'Submissions 45s apart with 0.82 avg similarity', evidence: { time_diff_seconds: 45, similarity_score: 0.82 } },
-        { flagged: true, fraud_type: 'Submission Clustering', record_id: `ASSIGN001_${allStudents[4]}_${allStudents[5]}`, confidence: 0.95, reason: 'Submissions 90s apart with 0.78 avg similarity', evidence: { time_diff_seconds: 90, similarity_score: 0.78 } },
-        { flagged: true, fraud_type: 'Submission Clustering', record_id: `ASSIGN002_${allStudents[2]}_${allStudents[3]}`, confidence: 0.95, reason: 'Submissions 90s apart with 0.90 avg similarity', evidence: { time_diff_seconds: 90, similarity_score: 0.9 } },
-        { flagged: true, fraud_type: 'CO Completion Rate', record_id: `${allCourses[3]}_Fall2023`, confidence: 0.95, reason: '100% attainment in cohort of 11 students is implausible', evidence: { student_count: 11, co_attainment_rate: 1.0 } },
-      ]
-
-      runProgress.set('Analyzing grade data...')
-      await delay(500)
+      // 2 — CLO Inconsistency Check
       runProgress.set('Checking CLO consistency...')
-      await delay(500)
+      await delay(200)
+      for (const row of studentsRows) {
+        const exam = parseFloat(row.exam_score)
+        const clo = parseFloat(row.co_score)
+        const gap = clo - exam
+        if (gap > 20) {
+          mockFlags.push({
+            flagged: true,
+            fraud_type: 'CLO Inconsistency',
+            record_id: `${row.student_id}_${row.course_id}`,
+            confidence: Math.min(0.7 + (gap - 20) * 0.015, 0.99),
+            reason: `CLO score ${gap}pts above exam exceeds 20pt threshold`,
+            evidence: { exam_score: exam, co_score: clo, co_exam_gap: Math.round(gap * 100) / 100 },
+          })
+        }
+      }
+
+      // 3 — Submission Clustering Check
       runProgress.set('Detecting submission clusters...')
-      await delay(500)
+      await delay(200)
+      const byAssignment: Record<string, any[]> = {}
+      for (const row of subsRows) {
+        const aid = row.assignment_id
+        if (!byAssignment[aid]) byAssignment[aid] = []
+        byAssignment[aid].push(row)
+      }
+      for (const [aid, group] of Object.entries(byAssignment)) {
+        const sorted = group.sort((a, b) => a.timestamp.localeCompare(b.timestamp))
+        for (let i = 0; i < sorted.length; i++) {
+          for (let j = i + 1; j < sorted.length; j++) {
+            const t1 = Date.parse(sorted[i].timestamp)
+            const t2 = Date.parse(sorted[j].timestamp)
+            if (isNaN(t1) || isNaN(t2)) continue
+            const td = Math.abs(t2 - t1) / 1000
+            if (td <= 120) {
+              const sim1 = parseFloat(sorted[i].similarity_score) || 0
+              const sim2 = parseFloat(sorted[j].similarity_score) || 0
+              const avgSim = (sim1 + sim2) / 2
+              if (avgSim > 0.75) {
+                mockFlags.push({
+                  flagged: true,
+                  fraud_type: 'Submission Clustering',
+                  record_id: `${aid}_${sorted[i].student_id}_${sorted[j].student_id}`,
+                  confidence: Math.min(0.7 + avgSim * 0.2, 0.99),
+                  reason: `Submissions ${Math.round(td)}s apart with ${avgSim.toFixed(2)} avg similarity`,
+                  evidence: { time_diff_seconds: Math.round(td), similarity_score: Math.round(avgSim * 100) / 100 },
+                })
+              }
+            }
+          }
+        }
+      }
+
+      // 4 — CO Completion Rate Check
+      runProgress.set('Checking completion rates...')
+      await delay(200)
+      const byCourse: Record<string, any[]> = {}
+      for (const row of studentsRows) {
+        const key = `${row.course_id}_${row.semester}`
+        if (!byCourse[key]) byCourse[key] = []
+        byCourse[key].push(row)
+      }
+      for (const [key, group] of Object.entries(byCourse)) {
+        if (group.length >= 8 && group.every(r => parseFloat(r.co_attainment_rate) === 1.0)) {
+          mockFlags.push({
+            flagged: true,
+            fraud_type: 'CO Completion Rate',
+            record_id: key,
+            confidence: 0.75 + Math.min(group.length, 50) * 0.005,
+            reason: `100% attainment in cohort of ${group.length} students is implausible`,
+            evidence: { student_count: group.length, co_attainment_rate: 1.0 },
+          })
+        }
+      }
+
       runProgress.set('Generating report...')
+
+      const severityLabel = mockFlags.length >= 3 ? 'HIGH' : mockFlags.length >= 1 ? 'MEDIUM' : 'LOW'
+      const byType: Record<string, number> = {}
+      for (const f of mockFlags) byType[f.fraud_type] = (byType[f.fraud_type] || 0) + 1
 
       const rep = [
         'ACADEMIC INTEGRITY AND OBE ANALYTICS REPORT',
-        `${'='.repeat(45)}`,
+        '='.repeat(45),
         '',
-        `Students in Dataset: ${allStudents.length}`,
-        `Courses in Dataset: ${allCourses.length}`,
+        `Total Students: ${studentsRows.length}`,
+        `Total Submissions: ${subsRows.length}`,
+        `Total Course-Sections: ${gradesRows.length}`,
         '',
         '--- Flags Detected ---',
+        ...Object.entries(byType).map(([t, c]) => `  ${t}: ${c}`),
+        '',
         ...mockFlags.map(f => `[${f.fraud_type}] ${f.record_id} — ${f.reason}`),
         '',
-        `Overall Severity: HIGH`,
+        `Overall Severity: ${severityLabel}`,
       ].join('\n')
 
       flags.set(mockFlags)
