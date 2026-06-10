@@ -1,0 +1,21 @@
+__pycache__/
+*.pyc
+.env
+venv/
+output/
+aria-gui/
+Full Plan/
+presentation/
+articles/
+*.html
+*.pptx
+*.docx
+STATUS.md
+PROGRESS_SUMMARY.md
+FINAL_SUMMARY.md
+hurles.md
+POST_PROPOSAL_CHANGELOG.md
+ARIA_Guide_Part*.md
+ARIA_Proposal_v5_Brown.md
+commit-summary.txt
+DESIGN.md
