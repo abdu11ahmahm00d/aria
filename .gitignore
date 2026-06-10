@@ -1,5 +1,6 @@
 __pycache__/
 *.pyc
+.vercel/
 .env
 venv/
 .atl/
@@ -19,6 +20,7 @@ corpus.json
 excluded.json
 list_models.py
 test_*.py
+generate_large_synthetic.py
 STATUS.md
 PROGRESS_SUMMARY.md
 FINAL_SUMMARY.md
