@@ -50,7 +50,7 @@ Four template strings: `GRADE_INFLATION_PROMPT`, `CLO_INCONSISTENCY_PROMPT`, `SU
 
 #### `aria/llm_client.py` -- LLM failover
 
-Two functions: `call_llm` (returns raw text) and `call_llm_json` (strips code fences, parses JSON, returns dict or None). Three-tier failover: local Firman gateway on port 18789, Gemini 2.5 Flash via Google AI Studio with exponential backoff (2^attempt seconds, 10 retries), and fallback to a mock response when `ARIA_USE_MOCK_LLM=1`.
+Two functions: `call_llm` (returns raw text) and `call_llm_json` (strips code fences, parses JSON, returns dict or None). Two-tier: Gemini 2.5 Flash via Google AI Studio with exponential backoff (2^attempt seconds, 10 retries), or mock mode when `ARIA_USE_MOCK_LLM=1`.
 
 **Invariant:** Neither `call_llm` nor `call_llm_json` ever crashes the pipeline. Network failures, timeouts, non-200 responses, and malformed JSON all produce logged warnings and return `None`. The caller decides what to do.
 
@@ -76,33 +76,44 @@ Key types: `aria_pipeline` (compiled graph singleton)
 
 Imports `_fix_langchain` first (non-negotiable). Parses CLI args. Builds initial `ARIAState` with file paths and empty containers. Calls `aria_pipeline.invoke(initial_state)`. Saves `flags.json` (machine-readable) and `report.txt` (human-readable) to the output directory.
 
-### `infrastructure/` -- Supporting services
+### `aria-gui/` -- Web GUI
 
-#### `infrastructure/firman_port.py`
+Svelte 5 + Vite + TypeScript frontend for visual pipeline interaction. Deployed to Vercel at `aria-decypher.vercel.app` and auto-deploys from `main` via Git integration.
 
-FastAPI server that exposes an OpenAI-compatible `/v1/chat/completions` endpoint. This was the intended local LLM gateway during development. The endpoint was added manually after the original server only had `/health` and `/collect` routes.
+Three-screen layout with a glass-morphism hover-reveal sidebar:
+- **Hero screen** -- Drag-and-drop CSV upload zone. Three file slots (grades, students, submissions). Conditional button glow activates only when all three files are loaded. Files reset on page reload (client-side only, no backend).
+- **Dashboard** -- Summary cards (total flags by type, severity badge), flag distribution chart, and a data ribbon with row counts per dataset.
+- **Flags/Courses/Students pages** -- Filterable data tables with pagination.
 
-**Invariant:** The pipeline never depends on this server being available. If it is down, the LLM client falls through to Gemini 2.5 Flash, then to mock mode.
+Key files:
+- `src/App.svelte` -- Root component with hero/upload flow and sidebar layout
+- `src/lib/uploads.ts` -- File upload store (3 file slots, readiness check)
+- `src/lib/csv.ts` -- CSV parser with `extractStudentIds`/`extractCourseCodes` utilities
+- `src/lib/components/Sidebar.svelte` -- Hover-reveal navigation with staggered item animation
+- `src/lib/api/client.ts` -- API client for the Python pipeline
+- `src/lib/stores.ts` -- Application state (view routing, data, flags)
+
+**Boundary:** The GUI is fully client-side. No backend server. The Python pipeline runs separately via CLI or API. The Vercel deployment is a static SPA with `vercel.json` rewrites for client-side routing.
+
+**Invariant:** No API keys, credentials, or pipeline logic exist in the GUI. It is purely a visualization layer.
 
 ### `data/` -- Synthetic datasets
 
-#### `data/synthetic/grades.csv` -- 8 records
+#### `data/synthetic/grades.csv` -- 144 records
 
-Course section averages with historical means and standard deviations. Three flagged sections (z > 1.5): CS101_001 (z=2.31), CS102_001 (z=1.73), MATH201_001 (z=1.52).
+Course section averages with historical means and standard deviations. 12 courses x 3 sections x 4 semesters (Fall2023--Spring2025). Generated with synthetic instructors and realistic grade distributions. Pipeline produces 5 Grade Inflation flags.
 
-#### `data/synthetic/students.csv` -- 22 records
+#### `data/synthetic/students.csv` -- 600 records
 
-Student exam scores, CO scores, and attainment rates across 5 courses. CS201 has 11 students with 100% attainment (triggers CO Completion Rate). 10 students across CS101, CS102, and CS201 have CLO-exam gaps exceeding 20 points.
+Student exam scores, CO scores, and attainment rates across all 12 courses. Includes students with anomalously high CO-exam gaps and perfect attainment rates for CO Completion Rate detection. Pipeline produces 8 CLO Inconsistency and 1 CO Completion Rate flag.
 
-#### `data/synthetic/submissions.csv` -- 8 records
+#### `data/synthetic/submissions.csv` -- 986 records
 
-Assignment submission timestamps and similarity scores. Three pairs within 120 seconds with similarity > 0.75: ASSIGN001 (two pairs, 45s and 90s), ASSIGN002 (one pair, 90s). ASSIGN003 pair at 300s is not flagged.
+Assignment submission timestamps and similarity scores across 50 assignments. Includes injection of clustered submission patterns (same assignment, high similarity, short time windows) for Submission Clustering detection. Pipeline produces 49 clustering flags.
 
-### `test_*.py` -- Test scripts (6 files)
+### `test_*.py` -- Test scripts (gitignored)
 
-Standalone scripts with independent LangChain workarounds and API key configurations. No shared fixtures or test runner. Each covers one aspect: pipeline smoke test, synthesizer isolated test, full pipeline with report output, Gemini API connectivity, Gemma API responses, LLM client unit test.
-
-**Invariant:** No test file is importable as a module. Each is designed to be run directly with `python test_*.py`. There is no `tests/__init__.py`.
+Standalone scripts with independent LangChain workarounds and API key configurations. No shared fixtures or test runner. Each covers one aspect: pipeline smoke test, synthesizer isolated test, full pipeline with report output, Gemini API connectivity, LLM client unit test. Excluded from version control via `.gitignore`.
 
 ## Cross-Cutting Concerns
 
@@ -126,6 +137,6 @@ The mock rules (`z > 1.5`, `gap > 20`, `time <= 120s and avg_sim > 0.75`, `cohor
 
 Tests are ad-hoc standalone scripts, not a structured suite. There is no test runner, no fixtures, no assertion framework beyond print statements. The mock LLM mode is the primary testing tool -- it produces deterministic output that can be verified by inspection. Integration tests require a real Gemini API key or the mock flag.
 
-### Dataset Size Gap
+### Dataset Scale
 
-The proposal specified 200/500/80 records. The current dataset is 22/8/8. The small dataset enables sub-second iteration during development but does not support statistically meaningful precision/recall evaluation. Scaling the dataset is mechanical: generate more records with the same anomaly injection patterns. The detection logic does not change.
+The current dataset (144 grades, 600 students, 986 submissions) exceeds the proposal specification of 200/500/80 and enables statistically meaningful pipeline evaluation. The pipeline produces 63 flags across all 4 fraud types in ~16s (mock) to ~5m (real LLM with rate limits). Scaling further is mechanical: the detection logic does not change, only the CSV rows.
