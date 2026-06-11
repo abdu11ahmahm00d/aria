@@ -20,7 +20,7 @@ corpus.json
 excluded.json
 list_models.py
 test_*.py
-generate_large_synthetic.py
+# data/synthetic/*.csv  # tracked — uncomment to ignore generated CSV files
 STATUS.md
 PROGRESS_SUMMARY.md
 FINAL_SUMMARY.md
