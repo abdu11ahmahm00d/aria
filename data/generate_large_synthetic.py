@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 
 random.seed(42)
 
-COURSES = [
+ALL_COURSES = [
     "CS101",
     "CS102",
     "CS201",
@@ -20,19 +20,17 @@ COURSES = [
     "CHM101",
     "BUS101",
 ]
-SECTIONS = ["001", "002", "003"]
-INSTRUCTORS = [f"INST{i:03d}" for i in range(1, 51)]
-SEMESTERS = ["Fall2023", "Spring2024", "Fall2024", "Spring2025"]
-ASSIGNMENTS = [f"ASSIGN{i:03d}" for i in range(1, 51)]
+ALL_INSTRUCTORS = [f"INST{i:03d}" for i in range(1, 51)]
+ALL_SEMESTERS = ["Fall2023", "Spring2024", "Fall2024", "Spring2025"]
 
 ANOMALY_RATE = 0.06
 
 
-def gen_grade_rows():
+def gen_grade_rows(courses, sections, semesters):
     rows = []
-    for cid in COURSES:
-        for sec in SECTIONS:
-            for sem in SEMESTERS:
+    for cid in courses:
+        for sec in sections:
+            for sem in semesters:
                 hm = round(random.uniform(62, 80), 1)
                 hs = round(random.uniform(3.5, 7.5), 1)
                 ag = round(random.uniform(hm - 3, hm + 5), 1)
@@ -40,7 +38,7 @@ def gen_grade_rows():
                     {
                         "course_id": cid,
                         "section_id": sec,
-                        "instructor_id": random.choice(INSTRUCTORS),
+                        "instructor_id": random.choice(ALL_INSTRUCTORS),
                         "semester": sem,
                         "avg_grade": ag,
                         "historical_mean": hm,
@@ -55,24 +53,21 @@ def gen_grade_rows():
     return rows
 
 
-def gen_student_rows(student_count: int = 600):
+def gen_student_rows(student_count, courses, semesters):
     sids = [f"STU{i:03d}" for i in range(1, student_count + 1)]
     rows = []
 
     for sid in sids:
-        cid = random.choice(COURSES)
-        sem = random.choice(SEMESTERS)
         exam = round(random.uniform(30, 95), 1)
         co = round(random.uniform(max(30, exam - 15), min(100, exam + 15)), 1)
-        att = round(random.uniform(0.4, 0.95), 2)
         rows.append(
             {
                 "student_id": sid,
-                "course_id": cid,
-                "semester": sem,
+                "course_id": random.choice(courses),
+                "semester": random.choice(semesters),
                 "exam_score": exam,
                 "co_score": co,
-                "co_attainment_rate": att,
+                "co_attainment_rate": round(random.uniform(0.4, 0.95), 2),
             }
         )
 
@@ -82,8 +77,8 @@ def gen_student_rows(student_count: int = 600):
         r["co_score"] = round(min(100, r["exam_score"] + gap), 1)
 
     used_ids = {r["student_id"] for r in flagged_clo}
-    cohort_course = random.choice(COURSES)
-    cohort_sem = random.choice(SEMESTERS)
+    cohort_course = random.choice(courses)
+    cohort_sem = random.choice(semesters)
     co_count = 0
     for r in rows:
         if r["course_id"] == cohort_course and r["semester"] == cohort_sem:
@@ -110,13 +105,14 @@ def gen_student_rows(student_count: int = 600):
     return rows
 
 
-def gen_submission_rows(student_count: int = 600):
+def gen_submission_rows(student_count, assignments):
     rows = []
     base_date = datetime(2023, 10, 15, 8, 0, 0, tzinfo=timezone.utc)
 
     pool = [f"STU{i:03d}" for i in range(1, student_count + 1)]
-    for i, assn in enumerate(ASSIGNMENTS):
-        n = random.randint(8, 30)
+    for i, assn in enumerate(assignments):
+        max_n = min(30, student_count)
+        n = random.randint(min(8, max_n), max_n)
         students = random.sample(pool, n)
         base = base_date + timedelta(days=i * 7 + random.randint(0, 5))
         for j, sid in enumerate(students):
@@ -132,13 +128,13 @@ def gen_submission_rows(student_count: int = 600):
                 }
             )
 
-    cluster_size = int(len(ASSIGNMENTS) * 0.3)
-    cluster_assignments = random.sample(ASSIGNMENTS, cluster_size)
+    cluster_size = max(1, int(len(assignments) * 0.3))
+    cluster_assignments = random.sample(assignments, cluster_size)
     for assn in cluster_assignments:
         batch = [r for r in rows if r["assignment_id"] == assn]
         if len(batch) < 3:
             continue
-        n_colluders = random.randint(2, 4)
+        n_colluders = random.randint(2, min(4, len(batch)))
         colluders = random.sample(batch, n_colluders)
         base_ts = datetime.fromisoformat(colluders[0]["timestamp"])
         for k, c in enumerate(colluders):
@@ -184,10 +180,21 @@ def write_csv(path, fields, data):
         w.writerows(data)
 
 
+def _scale_lists(student_count):
+    if student_count >= 300:
+        return (ALL_COURSES, ["001", "002", "003"], ALL_SEMESTERS, 50)
+    if student_count >= 100:
+        return (ALL_COURSES[:6], ["001", "002"], ALL_SEMESTERS[:2], 15)
+    return (ALL_COURSES[:4], ["001"], ALL_SEMESTERS[:2], 8)
+
+
 def generate(student_count: int, output_dir: str):
-    grades = gen_grade_rows()
-    students = gen_student_rows(student_count)
-    submissions = gen_submission_rows(student_count)
+    courses, sections, semesters, num_assignments = _scale_lists(student_count)
+    assignments = [f"ASSIGN{i:03d}" for i in range(1, num_assignments + 1)]
+
+    grades = gen_grade_rows(courses, sections, semesters)
+    students = gen_student_rows(student_count, courses, semesters)
+    submissions = gen_submission_rows(student_count, assignments)
 
     write_csv(os.path.join(output_dir, "grades.csv"), GRADE_FIELDS, grades)
     write_csv(os.path.join(output_dir, "students.csv"), STUDENT_FIELDS, students)
