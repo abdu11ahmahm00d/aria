@@ -1,15 +1,23 @@
 #!/usr/bin/env python3
-import aria._fix_langchain  # noqa: F401
+"""ARIA pipeline entry point."""
 
 import sys
 import json
 import time
 import os
-from pipeline import aria_pipeline
-from aria.state import ARIAState
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
+import aria._fix_langchain  # noqa: F401, E402
+from pipeline import aria_pipeline  # noqa: E402
+from aria.state import ARIAState  # noqa: E402
 
 
-def run(grades: str, students: str, submissions: str, output_dir: str = "output") -> dict:
+def run(
+    grades: str, students: str, submissions: str, output_dir: str = "output"
+) -> dict:
     os.makedirs(output_dir, exist_ok=True)
 
     initial_state: ARIAState = {
