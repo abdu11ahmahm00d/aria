@@ -19,7 +19,6 @@ export const navItems: NavItem[] = [
   { id: 'flags', label: 'Flags', icon: 'FlagTriangleRight' },
   { id: 'courses', label: 'Courses', icon: 'BookOpen' },
   { id: 'students', label: 'Students', icon: 'Users' },
-  { id: 'run', label: 'Run Pipeline', icon: 'Play' },
 ]
 
 export const defaultRunConfig: RunConfig = {
