@@ -23,9 +23,9 @@ export const navItems: NavItem[] = [
 ]
 
 export const defaultRunConfig: RunConfig = {
-  gradesPath: 'data/synthetic/grades.csv',
-  studentsPath: 'data/synthetic/students.csv',
-  submissionsPath: 'data/synthetic/submissions.csv',
+  gradesPath: 'data/synthetic/large/grades.csv',
+  studentsPath: 'data/synthetic/large/students.csv',
+  submissionsPath: 'data/synthetic/large/submissions.csv',
   outputDir: 'output',
   useMock: true,
 }
