@@ -6,7 +6,16 @@
   import type { Flag, Severity } from '../lib/types'
 
   let f = $derived($flags)
-  let courseGroups = $derived(groupBy(f, (flag: Flag) => flag.record_id?.split('_')[0] || 'unknown'))
+  let courseGroups = $derived(groupBy(f, (flag: Flag) => {
+    const parts = flag.record_id?.split('_') || []
+    // Grade Inflation: COURSECODE_# -> parts[0] is course
+    // CLO Inconsistency: STU###_COURSE -> parts[1] is course
+    // Submission Clustering: ASSIGN###_STU###_STU### -> no course, skip
+    // CO Completion Rate: COURSECODE_Term -> parts[0] is course
+    if (parts[0]?.startsWith('STU') && parts.length >= 2) return parts[1]
+    if (parts[0]?.startsWith('ASSIGN')) return '__nocourse__'
+    return parts[0] || 'unknown'
+}))
 
   function courseSeverity(courseFlags: Flag[]): Severity {
     const t = courseFlags.length
@@ -18,6 +27,7 @@
 
   let courseList = $derived(
     Object.entries(courseGroups)
+      .filter(([id]) => id !== '__nocourse__')
       .map(([id, cf]) => ({ id, flags: cf, severity: courseSeverity(cf), types: [...new Set(cf.map(x => x.fraud_type))] }))
       .sort((a, b) => b.flags.length - a.flags.length)
   )
