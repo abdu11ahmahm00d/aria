@@ -58,18 +58,22 @@ def gen_student_rows(student_count, courses, semesters):
     rows = []
 
     for sid in sids:
-        exam = round(random.uniform(30, 95), 1)
-        co = round(random.uniform(max(30, exam - 15), min(100, exam + 15)), 1)
-        rows.append(
-            {
-                "student_id": sid,
-                "course_id": random.choice(courses),
-                "semester": random.choice(semesters),
-                "exam_score": exam,
-                "co_score": co,
-                "co_attainment_rate": round(random.uniform(0.4, 0.95), 2),
-            }
-        )
+        num_courses = random.randint(4, 6)
+        chosen_courses = random.sample(courses, min(num_courses, len(courses)))
+        for cid in chosen_courses:
+            sem = random.choice(semesters)
+            exam = round(random.uniform(30, 95), 1)
+            co = round(random.uniform(max(30, exam - 15), min(100, exam + 15)), 1)
+            rows.append(
+                {
+                    "student_id": sid,
+                    "course_id": cid,
+                    "semester": sem,
+                    "exam_score": exam,
+                    "co_score": co,
+                    "co_attainment_rate": round(random.uniform(0.4, 0.95), 2),
+                }
+            )
 
     flagged_clo = random.sample(rows, int(len(rows) * ANOMALY_RATE * 0.35))
     for r in flagged_clo:
@@ -79,16 +83,20 @@ def gen_student_rows(student_count, courses, semesters):
     used_ids = {r["student_id"] for r in flagged_clo}
     cohort_course = random.choice(courses)
     cohort_sem = random.choice(semesters)
-    co_count = 0
-    for r in rows:
-        if r["course_id"] == cohort_course and r["semester"] == cohort_sem:
-            r["co_attainment_rate"] = 1.0
-            co_count += 1
+    cohort_rows = [
+        r
+        for r in rows
+        if r["course_id"] == cohort_course and r["semester"] == cohort_sem
+    ]
+    for r in cohort_rows:
+        r["co_attainment_rate"] = 1.0
 
-    if co_count < 8:
-        need = 12 - co_count
-        for _ in range(need):
-            sid = f"STU{random.randint(1, student_count):03d}"
+    if len(cohort_rows) < 8:
+        need = 12 - len(cohort_rows)
+        added = 0
+        for sid in sids:
+            if added >= need:
+                break
             if sid not in used_ids:
                 used_ids.add(sid)
                 rows.append(
@@ -101,6 +109,7 @@ def gen_student_rows(student_count, courses, semesters):
                         "co_attainment_rate": 1.0,
                     }
                 )
+                added += 1
 
     return rows
 
@@ -110,25 +119,44 @@ def gen_submission_rows(student_count, assignments):
     base_date = datetime(2023, 10, 15, 8, 0, 0, tzinfo=timezone.utc)
 
     pool = [f"STU{i:03d}" for i in range(1, student_count + 1)]
-    for i, assn in enumerate(assignments):
-        max_n = min(30, student_count)
-        n = random.randint(min(8, max_n), max_n)
-        students = random.sample(pool, n)
-        base = base_date + timedelta(days=i * 7 + random.randint(0, 5))
-        for j, sid in enumerate(students):
-            ts = base + timedelta(minutes=j * random.randint(5, 25))
-            sim = round(random.uniform(0.2, 0.6), 2)
+
+    # Every student submits to exactly 2 random assignments
+    for sid in pool:
+        n_assns = 2
+        chosen = random.sample(assignments, min(n_assns, len(assignments)))
+        for aid in chosen:
+            ts = base_date + timedelta(
+                days=int(aid.replace("ASSIGN", "")) * 7 + random.randint(0, 5),
+                minutes=random.randint(0, 1200),
+            )
             rows.append(
                 {
-                    "submission_id": f"SUB{i * 50 + j + 1:04d}",
+                    "submission_id": f"SUB{sid}{aid}",
                     "student_id": sid,
-                    "assignment_id": assn,
+                    "assignment_id": aid,
                     "timestamp": ts.isoformat(),
-                    "similarity_score": sim,
+                    "similarity_score": round(random.uniform(0.2, 0.6), 2),
                 }
             )
 
-    cluster_size = max(1, int(len(assignments) * 0.3))
+    # Extra submissions for some assignments (extra volume)
+    for i, assn in enumerate(assignments):
+        extra = random.randint(2, 8)
+        extras = random.sample(pool, min(extra, len(pool)))
+        for sid in extras:
+            ts = base_date + timedelta(days=i * 7 + random.randint(0, 5))
+            rows.append(
+                {
+                    "submission_id": f"SUBX{i:03d}_{sid}",
+                    "student_id": sid,
+                    "assignment_id": assn,
+                    "timestamp": (
+                        ts + timedelta(minutes=random.randint(0, 1200))
+                    ).isoformat(),
+                    "similarity_score": round(random.uniform(0.2, 0.6), 2),
+                }
+            )
+        cluster_size = max(1, int(len(assignments) * 0.3))
     cluster_assignments = random.sample(assignments, cluster_size)
     for assn in cluster_assignments:
         batch = [r for r in rows if r["assignment_id"] == assn]
