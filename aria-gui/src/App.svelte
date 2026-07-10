@@ -92,8 +92,7 @@ import { currentView, flags, isRunning, runProgress, report, error } from './lib
     error.set(null)
 
     setTimeout(async () => {
-      try {
-        runProgress.set('Analyzing grade inflation...')
+      runProgress.set('Analyzing grade inflation...')
       await delay(150)
       runProgress.set('Checking CLO consistency...')
       await delay(150)
@@ -215,11 +214,6 @@ import { currentView, flags, isRunning, runProgress, report, error } from './lib
       runProgress.set('')
 
       currentView.set('dashboard')
-      } catch(e) {
-        console.error('Pipeline error:', e);
-        isRunning.set(false);
-        error.set(e.message || 'Unknown error');
-      }
     }, 1500)
   }
 </script>
