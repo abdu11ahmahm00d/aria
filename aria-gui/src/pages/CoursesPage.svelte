@@ -1,4 +1,4 @@
-<script lang="ts">
+﻿<script lang="ts">
   import { flags } from '../lib/stores'
   import { groupBy, severityColor, fraudTypeColor } from '../lib/utils'
   import Card from '../lib/components/Card.svelte'
@@ -11,7 +11,7 @@
     // Grade Inflation: COURSECODE_# -> parts[0] is course
     // CLO Inconsistency: STU###_COURSE -> parts[1] is course
     // Submission Clustering: ASSIGN###_STU###_STU### -> no course, skip
-    // CO Completion Rate: COURSECODE_Term -> parts[0] is course
+    // CLO Completion Rate: COURSECODE_Term -> parts[0] is course
     if (parts[0]?.startsWith('STU') && parts.length >= 2) return parts[1]
     if (parts[0]?.startsWith('ASSIGN')) return '__nocourse__'
     return parts[0] || 'unknown'

@@ -29,7 +29,7 @@ export function fraudTypeColor(type: FraudType): string {
     case 'Grade Inflation': return '#f59e0b'
     case 'CLO Inconsistency': return '#8b5cf6'
     case 'Submission Clustering': return '#3b82f6'
-    case 'CO Completion Rate': return '#ef4444'
+    case 'CLO Completion Rate': return '#ef4444'
   }
 }
 

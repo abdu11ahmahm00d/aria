@@ -106,7 +106,7 @@
       { "flagged": true, "fraud_type": "Submission Clustering", "record_id": "ASSIGN043_STU230_STU032", "confidence": 0.95, "reason": "Submissions 56s apart with 0.81 avg similarity", "evidence": { "time_diff_seconds": 56, "similarity_score": 0.805 } },
       { "flagged": true, "fraud_type": "Submission Clustering", "record_id": "ASSIGN043_STU439_STU032", "confidence": 0.95, "reason": "Submissions 28s apart with 0.86 avg similarity", "evidence": { "time_diff_seconds": 28, "similarity_score": 0.865 } },
       { "flagged": true, "fraud_type": "Submission Clustering", "record_id": "ASSIGN044_STU327_STU180", "confidence": 0.95, "reason": "Submissions 24s apart with 0.82 avg similarity", "evidence": { "time_diff_seconds": 24, "similarity_score": 0.825 } },
-      { "flagged": true, "fraud_type": "CO Completion Rate", "record_id": "PHY101_Fall2024", "confidence": 0.95, "reason": "100% attainment in cohort of 67 students is implausible", "evidence": { "student_count": 67, "co_attainment_rate": 1.0 } }
+      { "flagged": true, "fraud_type": "CLO Completion Rate", "record_id": "PHY101_Fall2024", "confidence": 0.95, "reason": "100% attainment in cohort of 67 students is implausible", "evidence": { "student_count": 67, "co_attainment_rate": 1.0 } }
     ]
   }
 
@@ -216,7 +216,7 @@
       '  38. Record: ASSIGN043_STU439_STU032',
       '  39. Record: ASSIGN044_STU327_STU180',
       '',
-      'CO Completion Rate (1):',
+      'CLO Completion Rate (1):',
       '  1. Record: PHY101_Fall2024',
       '',
       'Correlations Identified:',
@@ -225,7 +225,7 @@
       '  - Multi-flagged course: CS201 flagged in 2 fraud types (CLO Inconsistency, Grade Inflation)',
       '  - Multi-flagged course: ENG101 flagged in 2 fraud types (CLO Inconsistency, Grade Inflation)',
       '  - Multi-flagged course: MATH301 flagged in 2 fraud types (CLO Inconsistency, Grade Inflation)',
-      '  - Multi-flagged course: PHY101 flagged in 3 fraud types (CLO Inconsistency, CO Completion Rate, Grade Inflation)',
+      '  - Multi-flagged course: PHY101 flagged in 3 fraud types (CLO Inconsistency, CLO Completion Rate, Grade Inflation)',
       '  - Dense cluster assignment: ASSIGN013 has 6 flagged submission pairs',
       '  - Dense cluster assignment: ASSIGN015 has 6 flagged submission pairs',
       '  - Dense cluster assignment: ASSIGN019 has 6 flagged submission pairs',
@@ -236,7 +236,7 @@
       '  - Dense cluster assignment: ASSIGN043 has 3 flagged submission pairs',
       '  - Cross-assignment student: STU227 appears in clusters across 2 different assignments',
       '',
-      'Estimated Impact on CLO Attainment: 1 CO Completion Rate flag(s) detected. Exclusion of these records may reduce cohort attainment rates; requires recomputation of CO attainment without flagged records.',
+      'Estimated Impact on CLO Attainment: 1 CLO Completion Rate flag(s) detected. Exclusion of these records may reduce cohort attainment rates; requires recomputation of CLO attainment without flagged records.',
       '',
       'Overall Severity: HIGH',
       '',

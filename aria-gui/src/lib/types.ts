@@ -7,7 +7,7 @@ export interface Flag {
   evidence: Record<string, unknown>;
 }
 
-export type FraudType = 'Grade Inflation' | 'CLO Inconsistency' | 'Submission Clustering' | 'CO Completion Rate';
+export type FraudType = 'Grade Inflation' | 'CLO Inconsistency' | 'Submission Clustering' | 'CLO Completion Rate';
 
 export type Severity = 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH';
 
