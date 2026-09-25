@@ -12,7 +12,7 @@
 
 </div>
 
-**ARIA** is an AI-powered audit system that detects suspicious patterns in university grade data, student assessment records, and assignment submissions — replacing a manual review process that takes **40–60 hours per department per semester**.
+**ARIA** is an AI-powered audit system that detects suspicious patterns in university grade data, student assessment records, and assignment submissions, replacing a manual review process that takes **40-60 hours per department per semester**.
 
 ---
 
@@ -31,23 +31,15 @@ ARIA analyzes **three CSV files** (grades, students, submissions) across **four 
 
 ## Architecture
 
-```
-┌──────────────────────────────────────────────────────────────────┐
-│                         StateGraph                               │
-│  ┌──────────┐     ┌──────────┐     ┌────────────┐               │
-│  │Collector │────▶│ Detector │────▶│Synthesizer │────▶ Report    │
-│  │ (CSV in) │     │ (4 flags)│     │ (Summary)  │               │
-│  └────┬─────┘     └────┬─────┘     └──────┬──────┘               │
-│       │                │                  │                      │
-│       └─── error ─→ END└─── error ─→ END  └─── error ─→ END     │
-└──────────────────────────────────────────────────────────────────┘
-```
+![ARIA LangGraph audit pipeline: three CSV files flow through the Collector, Detector, and Synthesizer to an audit report, with an error escape from every stage to a pipeline halt](docs/diagrams/pipeline.png)
 
 Three sequential LangGraph nodes with error escapes at every stage:
 
-1. **Collector** — Loads & validates CSVs, computes derived signals (z-scores, CLO-exam gaps)
-2. **Detector** — Runs 4 parallel fraud checkers (mock or LLM-augmented)
-3. **Synthesizer** — Produces a severity-assessed audit report with correlations & recommendations
+1. **Collector**: Loads & validates CSVs, computes derived signals (z-scores, CLO-exam gaps)
+2. **Detector**: Runs 4 parallel fraud checkers (mock or LLM-augmented)
+3. **Synthesizer**: Produces a severity-assessed audit report with correlations & recommendations
+
+The diagram is generated from [`docs/diagrams/pipeline.spec.json`](docs/diagrams/pipeline.spec.json). Open [`docs/diagrams/pipeline.html`](docs/diagrams/pipeline.html) in a browser for the interactive version (pan, zoom, trace, light/dark).
 
 ---
 
@@ -70,7 +62,7 @@ On the synthetic benchmark dataset (144 grades, 600 students, 986 submissions):
 ### Prerequisites
 
 - Python 3.11+
-- Google Gemini API key (optional — mock mode works without one)
+- Google Gemini API key (optional; mock mode works without one)
 
 ### Setup
 
@@ -107,11 +99,11 @@ Deployed at: [aria-decypher.vercel.app](https://aria-decypher.vercel.app)
 
 ## Key Design Decisions
 
-- **Mock mode as specification** — deterministic fraud rules define ground truth; LLM output is validated against them
-- **Error isolation** — every node has an escape hatch; no cascading failures
-- **Zero pandas leakage** — DataFrames never leave the Collector; the Detector works on JSON-safe dicts
-- **LLM failover** — 3 tiers (local gateway → Gemini 2.5 Flash → mock), never crashes
-- **GUI is client-side only** — no backend server, no API keys in the frontend
+- **Mock mode as specification**: deterministic fraud rules define ground truth; LLM output is validated against them
+- **Error isolation**: every node has an escape hatch; no cascading failures
+- **Zero pandas leakage**: DataFrames never leave the Collector; the Detector works on JSON-safe dicts
+- **LLM failover**: 3 tiers (local gateway → Gemini 2.5 Flash → mock), never crashes
+- **GUI is client-side only**: no backend server, no API keys in the frontend
 
 ---
 

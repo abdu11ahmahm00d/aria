@@ -10,6 +10,10 @@ presentation/
 articles/
 pdfs/
 *.html
+# Archify deliverables are tracked source artifacts, not build junk.
+!docs/diagrams/*.html
+# Archify visual-check receipts and screenshots are local verification evidence only.
+docs/diagrams/*.visual-check.*
 *.pptx
 *.docx
 firman.log
