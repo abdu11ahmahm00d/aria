@@ -39,8 +39,6 @@ Three sequential LangGraph nodes with error escapes at every stage:
 2. **Detector**: Runs 4 parallel fraud checkers (mock or LLM-augmented)
 3. **Synthesizer**: Produces a severity-assessed audit report with correlations & recommendations
 
-The diagram is generated from [`docs/diagrams/pipeline.spec.json`](docs/diagrams/pipeline.spec.json). Open [`docs/diagrams/pipeline.html`](docs/diagrams/pipeline.html) in a browser for the interactive version (pan, zoom, trace, light/dark).
-
 ---
 
 ## Results
