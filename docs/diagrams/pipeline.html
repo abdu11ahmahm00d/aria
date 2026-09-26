@@ -5024,10 +5024,10 @@
 
         <!-- Swimlanes -->
         <rect data-graph-role="structural-frame" data-composition-frame-kind="lane" data-composition-frame-id="lane-0" x="40" y="52" width="640" height="104" rx="10" class="c-lane" stroke-width="1"/>
-        <text x="54" y="74" class="t-dim" font-size="10" font-weight="600">01 / Read, Detect, Report</text>
+        <text x="54" y="74" class="t-dim" font-size="10" font-weight="600">01 / Input, Collect, Report</text>
 
         <rect data-graph-role="structural-frame" data-composition-frame-kind="lane" data-composition-frame-id="lane-1" x="40" y="176" width="640" height="104" rx="10" class="c-lane" stroke-width="1"/>
-        <text x="54" y="198" class="t-dim" font-size="10" font-weight="600">02 / Collect, Synthesize</text>
+        <text x="54" y="198" class="t-dim" font-size="10" font-weight="600">02 / Detect, Synthesize</text>
 
         <rect data-graph-role="structural-frame" data-composition-frame-kind="lane" data-composition-frame-id="lane-2" x="40" y="300" width="640" height="104" rx="10" class="c-lane" stroke-width="1"/>
         <rect data-graph-role="structural-frame" data-composition-frame-kind="exception-lane" data-composition-frame-id="lane-2-exception" x="46" y="306" width="628" height="92" rx="8" class="c-security-group" stroke-width="1"/>
@@ -5040,43 +5040,42 @@
 
 
         <!-- Edge paths -->
-        <path data-edge-from="csvs" data-edge-to="collector" data-edge-key="0" data-edge-id="e1" data-composition-points="88,145;88,243;174,243" d="M 88 145 L 88 243 L 174 243" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
-        <path data-edge-from="collector" data-edge-to="detector" data-edge-key="1" data-edge-id="e2" data-composition-points="220,217;220,119;254,119" d="M 220 217 L 220 119 L 254 119" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
-        <path data-edge-from="detector" data-edge-to="synthesizer" data-edge-key="2" data-edge-id="e3" data-composition-points="293,145;293,243;384,243" d="M 293 145 L 293 243 L 384 243" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
-        <path data-edge-from="synthesizer" data-edge-to="report" data-edge-key="3" data-edge-id="e4" data-composition-points="430,217;430,119;454,119" d="M 430 217 L 430 119 L 454 119" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
-        <path data-edge-from="collector" data-edge-to="halt" data-edge-key="4" data-edge-id="x1" data-composition-points="220,269;220,367;454,367" d="M 220 269 L 220 367 L 454 367" class="a-security" stroke-width="1.4" marker-end="url(#arrowhead-security)"/>
-        <path data-edge-from="detector" data-edge-to="halt" data-edge-key="5" data-edge-id="x2" data-composition-points="307,145;307,357;454,357" d="M 307 145 L 307 357 L 454 357" class="a-security" stroke-width="1.4" marker-end="url(#arrowhead-security)"/>
-        <path data-edge-from="synthesizer" data-edge-to="halt" data-edge-key="6" data-edge-id="x3" data-composition-points="430,269;430,377;454,377" d="M 430 269 L 430 377 L 454 377" class="a-security" stroke-width="1.4" marker-end="url(#arrowhead-security)"/>
+        <path data-edge-from="csvs" data-edge-to="collector" data-edge-key="0" data-edge-id="e1" data-composition-points="136,119;168,119" d="M 136 119 L 168 119" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <path data-edge-from="collector" data-edge-to="detector" data-edge-key="1" data-edge-id="e2" data-composition-points="213,145;213,243;254,243" d="M 213 145 L 213 243 L 254 243" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <path data-edge-from="detector" data-edge-to="synthesizer" data-edge-key="2" data-edge-id="e3" data-composition-points="346,243;374,243" d="M 346 243 L 374 243" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <path data-edge-from="synthesizer" data-edge-to="report" data-edge-key="3" data-edge-id="e4" data-composition-points="486,236;500,236;500,145" d="M 486 236 L 500 236 L 500 145" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <path data-edge-from="collector" data-edge-to="halt" data-edge-key="4" data-edge-id="x1" data-composition-points="227,145;227,360;432.5,360" d="M 227 145 L 227 360 L 432.5 360" class="a-security" stroke-width="1.4" marker-end="url(#arrowhead-security)"/>
+        <path data-edge-from="detector" data-edge-to="halt" data-edge-key="5" data-edge-id="x2" data-composition-points="300,269;300,374;432.5,374" d="M 300 269 L 300 374 L 432.5 374" class="a-security" stroke-width="1.4" marker-end="url(#arrowhead-security)"/>
+        <path data-edge-from="synthesizer" data-edge-to="halt" data-edge-key="6" data-edge-id="x3" data-composition-points="486,250;500,250;500,341" d="M 486 250 L 500 250 L 500 341" class="a-security" stroke-width="1.4" marker-end="url(#arrowhead-security)"/>
 
         <!-- Nodes -->
-        <g id="node-csvs" data-node-id="csvs" data-node-label="3 CSV Files" tabindex="0" role="button" aria-label="Focus 3 CSV Files, 3 CSVs, Read, Detect, Report" aria-pressed="false" data-node-kind="external" data-node-sublabel="3 CSVs" data-node-context="Read, Detect, Report">
-          <title>3 CSV Files · 3 CSVs · Read, Detect, Report</title>
-          <rect x="42" y="93" width="92" height="52" rx="6" class="c-mask"/>
-          <rect x="42" y="93" width="92" height="52" rx="6" class="c-external" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="external" class="semantic-sigil s-external" transform="translate(48 99) scale(0.6875)">
+        <g id="node-csvs" data-node-id="csvs" data-node-label="3 CSVs" tabindex="0" role="button" aria-label="Focus 3 CSVs, Input, Collect, Report" aria-pressed="false" data-node-kind="external" data-node-context="Input, Collect, Report">
+          <title>3 CSVs · Input, Collect, Report</title>
+          <rect x="40" y="93" width="96" height="52" rx="6" class="c-mask"/>
+          <rect x="40" y="93" width="96" height="52" rx="6" class="c-external" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="external" class="semantic-sigil s-external" transform="translate(46 99) scale(0.6875)">
             <rect x="2.5" y="5" width="8.5" height="8" rx="1.5"/>
             <path d="M8 2.5h5.5V8M13.5 2.5 7.5 8.5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="88" y="114" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">3 CSV Files</text>
-          <text data-detail="context" x="88" y="131" class="t-muted" font-size="8" text-anchor="middle">3 CSVs</text>
+          <text data-node-label="" x="88" y="114" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">3 CSVs</text>
         </g>
 
-        <g id="node-detector" data-node-id="detector" data-node-label="Detector" tabindex="0" role="button" aria-label="Focus Detector, 4 checkers, Read, Detect, Report" aria-pressed="false" data-node-kind="backend" data-node-sublabel="4 checkers" data-node-context="Read, Detect, Report">
-          <title>Detector · 4 checkers · Read, Detect, Report</title>
-          <rect x="254" y="93" width="92" height="52" rx="6" class="c-mask"/>
-          <rect x="254" y="93" width="92" height="52" rx="6" class="c-backend" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(260 99) scale(0.6875)">
+        <g id="node-collector" data-node-id="collector" data-node-label="Collector" tabindex="0" role="button" aria-label="Focus Collector, validate, Input, Collect, Report" aria-pressed="false" data-node-kind="backend" data-node-sublabel="validate" data-node-context="Input, Collect, Report">
+          <title>Collector · validate · Input, Collect, Report</title>
+          <rect x="168" y="93" width="104" height="52" rx="6" class="c-mask"/>
+          <rect x="168" y="93" width="104" height="52" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(174 99) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="300" y="114" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Detector</text>
-          <text data-detail="context" x="300" y="131" class="t-muted" font-size="8" text-anchor="middle">4 checkers</text>
+          <text data-node-label="" data-detail-anchor="" x="220" y="114" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Collector</text>
+          <text data-detail="context" x="220" y="131" class="t-muted" font-size="8" text-anchor="middle">validate</text>
         </g>
 
-        <g id="node-report" data-node-id="report" data-node-label="Audit Report" tabindex="0" role="button" aria-label="Focus Audit Report, flags.json, Read, Detect, Report" aria-pressed="false" data-node-kind="database" data-node-sublabel="flags.json" data-node-context="Read, Detect, Report">
-          <title>Audit Report · flags.json · Read, Detect, Report</title>
-          <rect x="454" y="93" width="92" height="52" rx="6" class="c-mask"/>
-          <rect x="454" y="93" width="92" height="52" rx="6" class="c-database" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="database" class="semantic-sigil s-database" transform="translate(460 99) scale(0.6875)">
+        <g id="node-report" data-node-id="report" data-node-label="Audit Report" tabindex="0" role="button" aria-label="Focus Audit Report, flags.json, Input, Collect, Report" aria-pressed="false" data-node-kind="database" data-node-sublabel="flags.json" data-node-context="Input, Collect, Report">
+          <title>Audit Report · flags.json · Input, Collect, Report</title>
+          <rect x="435" y="93" width="130" height="52" rx="6" class="c-mask"/>
+          <rect x="435" y="93" width="130" height="52" rx="6" class="c-database" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="database" class="semantic-sigil s-database" transform="translate(441 99) scale(0.6875)">
             <ellipse cx="8" cy="4" rx="5" ry="2"/>
             <path d="M3 4v8c0 1.1 2.2 2 5 2s5-.9 5-2V4M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/>
           </g>
@@ -5084,22 +5083,22 @@
           <text data-detail="context" x="500" y="131" class="t-muted" font-size="8" text-anchor="middle">flags.json</text>
         </g>
 
-        <g id="node-collector" data-node-id="collector" data-node-label="Collector" tabindex="0" role="button" aria-label="Focus Collector, validate, Collect, Synthesize" aria-pressed="false" data-node-kind="backend" data-node-sublabel="validate" data-node-context="Collect, Synthesize">
-          <title>Collector · validate · Collect, Synthesize</title>
-          <rect x="174" y="217" width="92" height="52" rx="6" class="c-mask"/>
-          <rect x="174" y="217" width="92" height="52" rx="6" class="c-backend" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(180 223) scale(0.6875)">
+        <g id="node-detector" data-node-id="detector" data-node-label="Detector" tabindex="0" role="button" aria-label="Focus Detector, 4 checkers, Detect, Synthesize" aria-pressed="false" data-node-kind="backend" data-node-sublabel="4 checkers" data-node-context="Detect, Synthesize">
+          <title>Detector · 4 checkers · Detect, Synthesize</title>
+          <rect x="254" y="217" width="92" height="52" rx="6" class="c-mask"/>
+          <rect x="254" y="217" width="92" height="52" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(260 223) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="220" y="238" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Collector</text>
-          <text data-detail="context" x="220" y="255" class="t-muted" font-size="8" text-anchor="middle">validate</text>
+          <text data-node-label="" data-detail-anchor="" x="300" y="238" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Detector</text>
+          <text data-detail="context" x="300" y="255" class="t-muted" font-size="8" text-anchor="middle">4 checkers</text>
         </g>
 
-        <g id="node-synthesizer" data-node-id="synthesizer" data-node-label="Synthesizer" tabindex="0" role="button" aria-label="Focus Synthesizer, severity, Collect, Synthesize" aria-pressed="false" data-node-kind="backend" data-node-sublabel="severity" data-node-context="Collect, Synthesize">
-          <title>Synthesizer · severity · Collect, Synthesize</title>
-          <rect x="384" y="217" width="92" height="52" rx="6" class="c-mask"/>
-          <rect x="384" y="217" width="92" height="52" rx="6" class="c-backend" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(390 223) scale(0.6875)">
+        <g id="node-synthesizer" data-node-id="synthesizer" data-node-label="Synthesizer" tabindex="0" role="button" aria-label="Focus Synthesizer, severity, Detect, Synthesize" aria-pressed="false" data-node-kind="backend" data-node-sublabel="severity" data-node-context="Detect, Synthesize">
+          <title>Synthesizer · severity · Detect, Synthesize</title>
+          <rect x="374" y="217" width="112" height="52" rx="6" class="c-mask"/>
+          <rect x="374" y="217" width="112" height="52" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(380 223) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
           <text data-node-label="" data-detail-anchor="" x="430" y="238" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Synthesizer</text>
@@ -5108,13 +5107,13 @@
 
         <g id="node-halt" data-node-id="halt" data-node-label="Pipeline Halt" tabindex="0" role="button" aria-label="Focus Pipeline Halt, error, halt, Error Handling" aria-pressed="false" data-node-kind="security" data-node-sublabel="error, halt" data-node-context="Error Handling">
           <title>Pipeline Halt · error, halt · Error Handling</title>
-          <rect x="454" y="341" width="92" height="52" rx="6" class="c-mask"/>
-          <rect x="454" y="341" width="92" height="52" rx="6" class="c-security" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="security" class="semantic-sigil s-security" transform="translate(460 347) scale(0.6875)">
+          <rect x="432.5" y="341" width="135" height="52" rx="6" class="c-mask"/>
+          <rect x="432.5" y="341" width="135" height="52" rx="6" class="c-security" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="security" class="semantic-sigil s-security" transform="translate(438.5 347) scale(0.6875)">
             <path d="M8 2.2 13 4v3.5c0 3.1-1.8 5.4-5 6.5-3.2-1.1-5-3.4-5-6.5V4Z"/>
             <path d="m5.8 8 1.5 1.5 3-3"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="500" y="362" class="t-primary" font-size="10.7" font-weight="600" text-anchor="middle">Pipeline Halt</text>
+          <text data-node-label="" data-detail-anchor="" x="500" y="362" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Pipeline Halt</text>
           <text data-detail="context" x="500" y="379" class="t-muted" font-size="8" text-anchor="middle">error, halt</text>
         </g>
 
